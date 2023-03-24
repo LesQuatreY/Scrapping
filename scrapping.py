@@ -8,25 +8,19 @@ from urllib.parse import urlparse, urljoin
 url = 'https://www.rueducommerce.fr/rayon/telephonie-92/samsung-galaxy-7546/occasions'
 socle = urlparse(url).scheme + "://" + urlparse(url).hostname
 
-# Récupération de tous les liens de produits sur la page
+# Récupération de tous les liens des produits du catalogue
 response = requests.get(url)
 soup = BeautifulSoup(response.content, 'html.parser')
-product_links = [a.a.get('href') for a in soup.find_all('p', class_='item__caracs')] 
+product_links = [a.get('href') for a in soup.find_all('a', class_='item__image')]
 
 next_link = soup.select_one('link[rel="next"]')
 while next_link:
     next_url = urljoin(socle, next_link.get('href'))
     next_response = requests.get(next_url)
     next_soup = BeautifulSoup(next_response.content, 'html.parser')
-    next_product_links = [a.a.get('href') for a in next_soup.find_all('p', class_='item__caracs')]
+    next_product_links = [a.get('href') for a in next_soup.find_all('a', class_='item__image')]
     product_links += next_product_links
     next_link = next_soup.select_one('link[rel="next"]')
-
-# Récupération de tous les liens des produits sur la page
-soup_catalog = BeautifulSoup(requests.get(url).content, 'html.parser')
-product_links = list(set(
-    [a.a.get('href') for a in soup_catalog.find_all('p', class_='item__caracs')]
-))
 
 # Récupération des fiches marchands et le nom des vendeurs
 marchands_links  = []
@@ -34,12 +28,13 @@ marchands_names = []
 
 for link in product_links:
     soup_product = BeautifulSoup(requests.get(socle + link).content, 'html.parser')
-    marchand_name = soup_product.find_all('a', class_="produit__vendeur-nom")[0].text
-    if marchand_name not in marchands_names: # On récupère seulement les valeurs uniques
-        marchands_links.append(
-            soup_product.find_all('a', class_="produit__vendeur-nom")[0].get("href")
-        )
-        marchands_names.append(marchand_name)
+    if soup_product.find_all('a', class_="produit__vendeur-nom"):
+        marchand_name = soup_product.find_all('a', class_="produit__vendeur-nom")[0].text
+        if marchand_name not in marchands_names: # On récupère seulement les valeurs uniques
+            marchands_links.append(
+                soup_product.find_all('a', class_="produit__vendeur-nom")[0].get("href")
+            )
+            marchands_names.append(marchand_name)
 
 # Récupération des SIREN
 def get_siren(txt):
@@ -61,8 +56,8 @@ for marchand_link in marchands_links:
             422797720
         )
 
-print(marchands_names, marchands_SIREN)
-# Exporter le fichier csv avec les infos
-#pd.DataFrame({'vendor_name': marchands_names, 'siren': marchands_SIREN}).to_csv('vendors.csv', index=False)
-
-# pas pris en comtpe :https://www.rueducommerce.fr/p-samsung-galaxy-z-flip3-5g-sm-f711b-samsung-2012168170-27453.html?articleOfferId=63573044
+# Récupérer les informations demandées
+vendors = pd.DataFrame({'vendor_name': marchands_names, 'siren': marchands_SIREN})
+print(vendors)
+## Exporter le fichier csv avec les infos
+vendors.to_csv('vendors.csv', index=False)
