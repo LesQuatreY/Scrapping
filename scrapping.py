@@ -11,7 +11,7 @@ socle = urlparse(url).scheme + "://" + urlparse(url).hostname
 # Récupération de tous les liens de produits sur la page
 response = requests.get(url)
 soup = BeautifulSoup(response.content, 'html.parser')
-product_links = [a.a.get('href') for a in soup.find_all('p', class_='item__caracs')] #class_=item__image #item__caracs
+product_links = [a.a.get('href') for a in soup.find_all('p', class_='item__caracs')] 
 
 next_link = soup.select_one('link[rel="next"]')
 while next_link:

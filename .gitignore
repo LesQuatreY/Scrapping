@@ -1,0 +1,5 @@
+# Ignore les fichiers .ipynb
+*.ipynb
+
+# Ignore les fichiers .csv
+*.csv
